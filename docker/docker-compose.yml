@@ -1,0 +1,79 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: dp_postgres
+    environment:
+      POSTGRES_USER: dp
+      POSTGRES_PASSWORD: dp
+      POSTGRES_DB: dp
+    ports:
+      - "5432:5432"
+    volumes:
+      - dp_pgdata:/var/lib/postgresql/data
+      - ../scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dp -d dp"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  spark:
+    image: bitnami/spark:3.5
+    container_name: dp_spark
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    volumes:
+      - ..:/opt/project
+
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: dp_spark_worker
+    depends_on:
+      - spark
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+    volumes:
+      - ..:/opt/project
+
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: airflow.Dockerfile
+    container_name: dp_airflow_web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-scheduler:
+        condition: service_started
+    env_file:
+      - airflow.env
+    ports:
+      - "8088:8080"
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ..:/opt/project
+    command: webserver
+
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: airflow.Dockerfile
+    container_name: dp_airflow_sched
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - airflow.env
+    volumes:
+      - ../airflow/dags:/opt/airflow/dags
+      - ..:/opt/project
+    command: scheduler
+
+volumes:
+  dp_pgdata:

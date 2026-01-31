@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Airflow
+airflow/logs/
+airflow/plugins/
+
+# Spark
+spark-warehouse/
+data/raw/
+data/checkpoint/
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+
