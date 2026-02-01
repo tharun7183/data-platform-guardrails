@@ -1,3 +1,5 @@
+![CI](https://github.com/tharun7183/data-platform-guardrails/actions/workflows/ci.yml/badge.svg)
+
 # Spark + Airflow Data Platform Guardrails (Mini Project)
 
 A GitHub-ready mini-project that mirrors real Data Platform work:
